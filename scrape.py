@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import ElementClickInterceptedException
 
 
 # My modules
@@ -162,7 +163,7 @@ def download_pnt_target_data(
     profile.set_preference("browser.download.dir", target_dir)
     profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
     opts = webdriver.firefox.options.Options()
-    #opts.set_headless()
+    opts.set_headless()
 
     driver = webdriver.Firefox(firefox_profile=profile, options = opts)
     url = "https://consultapublicamx.inai.org.mx/vut-web/faces/view/consultaPublica.xhtml#inicio"
@@ -191,7 +192,19 @@ def download_pnt_target_data(
         "//div[@id='formListaSujetosAZ:listaAZSujetos']/ol/child::li"
         )
     available_letters = [i.text for i in options]
-    letter_index = available_letters.index(institution[0])
+
+    letter = institution[0].upper()
+    letter_replaces = {
+            "Á": "A",
+            "É": "E",
+            "Í": "I",
+            "Ó": "O",
+            "Ú": "U"
+            }
+    for l in letter_replaces.keys():
+        letter = letter.replace(l, letter_replaces[l])
+
+    letter_index = available_letters.index(letter)
     options[letter_index].click()
 
 
@@ -212,7 +225,13 @@ def download_pnt_target_data(
     button_years = get_web_elements(
         driver, "//div[@id='periodoOriginal']/div/button", 1
         )
-    button_years[0].click()
+
+    try:
+        button_years[0].click()
+    # This happens when the institution has no obligations
+    except ElementClickInterceptedException:
+        driver.quit()
+        return None
 
     # Select a year from the dropdown menu
     year_options = get_web_elements(
@@ -238,6 +257,8 @@ def download_pnt_target_data(
         year_options[years.index(year)].click()
 
         print("Year range " + str(year) + " selected...")
+
+        time.sleep(2)
 
         # Now select the type of data to download, e.g. the Directorio
         ## If there are no obligations, get outta here.
@@ -331,6 +352,9 @@ def download_pnt_target_data(
                 webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
                 time.sleep(2)
 
+        else:
+            time.sleep(2)
+
 
     ## Close session
 
@@ -339,10 +363,28 @@ def download_pnt_target_data(
     return None
 
 
-def download_pnt_bulk_data(obligation = None):
+def download_pnt_data_bulk(current_row, obligation = None):
     df = pd.read_csv("./processed/institutions.csv")
 
-    for i in df.index:
+    for i in df.index[current_row: ]:
+        print("Starting row " + str(i) + " of institutions catalog.")
+        target_dir = (
+            "/home/fdvom/grive/data/pnt/raw/"
+            + df["id_government"].iloc[i] + "/"
+            + df["id_pnt_institution"].iloc[i]
+            )
+        government = df["government"].iloc[i]
+        institution = df["institution"].iloc[i]
+
+        download_pnt_target_data(government, institution, target_dir, obligation)
+
+
+def download_pnt_data_government(government, current_row, obligation = None):
+    df = pd.read_csv("./processed/institutions.csv")
+
+    df = df[df["government"] == government].reset_index(drop = True)
+
+    for i in df.index[current_row: ]:
         print("Starting row " + str(i) + " of institutions catalog.")
         target_dir = (
             "/home/fdvom/grive/data/pnt/raw/"
@@ -360,7 +402,7 @@ def download_pnt_bulk_data(obligation = None):
 
 
 
-
 # Function calls
 #create_directory_structure()
-download_pnt_bulk_data()
+
+#download_pnt_bulk_data()
