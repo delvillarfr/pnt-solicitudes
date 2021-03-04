@@ -49,12 +49,20 @@ def get_solicitud_data(driver, i):
     return result
 
 
-def get_solicitudes(state = None, starting_page = None, spp = None):
+def get_solicitudes(
+        state = None,
+        starting_page = None,
+        spp = None,
+        directory = None
+        ):
     """ Fetch and save solicitudes in the Plataforma Nacional de Transparencia.
 
     Each page's solicitudes are saved in .csv format for further processing.
-    The .csv files are saved in its corresponding state directory. E.g. page
-    124 of state "04" is saved as ./raw/solicitudes/s04/124.csv
+    The .csv files are saved in the target directory. The default directory is
+    "./raw/", i.e. page 124 of state "09" is saved as "./raw/s09_p124.csv".
+
+    Solicitudes are loaded in the website by searching for
+    "informacion publica".
 
     Args:
         state (str): The INEGI state id. One of "00", "01", ..., "32". "00"
@@ -62,6 +70,7 @@ def get_solicitudes(state = None, starting_page = None, spp = None):
         starting_page (int): The starting page to fetch solicitudes.
         spp (int): Number of solicitudes per page. It can be 20, 50, 100, 200,
             or 500.
+        directory (str): The target directory.
     """
     if state is None:
         state = "01"
@@ -71,6 +80,10 @@ def get_solicitudes(state = None, starting_page = None, spp = None):
 
     if spp is None:
         spp = 500
+
+    if directory is None:
+        directory = "./raw/"
+
 
     # Set Firefox preferences
     profile = webdriver.FirefoxProfile()
@@ -156,7 +169,7 @@ def get_solicitudes(state = None, starting_page = None, spp = None):
                         records.append(fields)
 
                 df = pd.DataFrame(records)
-                df.to_csv("./raw/solicitudes/s" + state + "/p" + str(page) + ".csv", index = False)
+                df.to_csv(directory + "s" + state + "_p" + str(page) + ".csv", index = False)
 
                 try:
                     go_to_next_page(driver)
