@@ -1,4 +1,4 @@
-> A Python + Selenium script to scrape solicitudes from Mexico's Plataforma Nacional de Transparencia.
+A Python + Selenium script to scrape solicitudes from Mexico's Plataforma Nacional de Transparencia.
 
 > https://www.plataformadetransparencia.org.mx/web/guest/inicio
 
