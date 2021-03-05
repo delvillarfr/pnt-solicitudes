@@ -163,7 +163,7 @@ def get_solicitudes(
                 records = [] 
                 for i in range(spp):
                     fields = get_solicitud_data(driver, i)
-                records.append(fields)
+                    records.append(fields)
 
                 df = pd.DataFrame(records)
                 df.to_csv(directory + "s" + state + "_p" + str(page) + ".csv", index = False)
