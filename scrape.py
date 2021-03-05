@@ -39,6 +39,8 @@ def get_solicitud_data(driver, i):
         fields = elem.find_elements_by_class_name("row")
         result = [f.text for f in fields]
 
+    # Return an empty list if the driver is at the last page and the solicitud
+    # index exceeds the number of solicitudes on the page.
     except NoSuchElementException:
         try:
             driver.find_element_by_css_selector(".page-item.next a").click()
@@ -161,12 +163,6 @@ def get_solicitudes(
                 records = [] 
                 for i in range(spp):
                     fields = get_solicitud_data(driver, i)
-
-                    if fields == "reload":
-                        driver.quit()
-                        return get_solicitudes(state, page, spp)
-                    else:
-                        records.append(fields)
 
                 df = pd.DataFrame(records)
                 df.to_csv(directory + "s" + state + "_p" + str(page) + ".csv", index = False)
